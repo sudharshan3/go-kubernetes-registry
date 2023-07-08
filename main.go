@@ -16,8 +16,11 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Print("Connection Established Successfully...")
-	log.Print("Create Registry Deployment...")
+	log.Print("Creating Registry Deployment...")
 	newRegistry.RegistryName = "registry"
+	newRegistry.RegistryServiceName = "registry-service"
+	newRegistry.RegistryServicePort = 5000
+	newRegistry.RegistryServiceProtocol = "TCP"
 	newRegistry.RegistryAppName = "registry"
 	newRegistry.RegistryNamespace = "default"
 	newRegistry.RegistryImage = "registry:2"
@@ -28,5 +31,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	log.Print("Creating Registry Service...")
+	_, err = newRegistry.CreateRegistryService(kube)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

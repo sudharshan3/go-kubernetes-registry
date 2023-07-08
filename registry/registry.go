@@ -2,10 +2,12 @@ package registry
 
 import (
 	"context"
+	"log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -76,4 +78,41 @@ func (registryDetails *Registry) CreateRegistryDeployment(clientSet *kubernetes.
 		return nil, err
 	}
 	return deployment, nil
+}
+
+func (registryDetails *Registry) CreateRegistryService(clientSet *kubernetes.Clientset) (*corev1.Service, error) {
+	if registryDetails.RegistryServiceName == "" {
+		log.Fatal("Please Provide Registry Service Name")
+	}
+	if registryDetails.RegistryServicePort == 0 {
+		log.Fatal("Please Provide Registry Service Port")
+	}
+	if registryDetails.RegistryServiceProtocol == "" {
+		log.Fatal("Please Provide Registry Service Protocol")
+	}
+	registryService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      registryDetails.RegistryServiceName,
+			Namespace: registryDetails.RegistryNamespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+			Selector: map[string]string{
+				"app": registryDetails.RegistryAppName,
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http",
+					Port:       int32(registryDetails.RegistryServicePort),
+					TargetPort: intstr.IntOrString{IntVal: int32(registryDetails.RegistryServicePort)},
+					Protocol:   corev1.Protocol(registryDetails.RegistryServiceProtocol),
+				},
+			},
+		},
+	}
+	service, err := clientSet.CoreV1().Services(registryDetails.RegistryNamespace).Create(context.TODO(), registryService, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return service, nil
 }
