@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: builder-pod
+spec:
+  containers:
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:v1.9.0-debug
+    args: ["--customPlatform=linux/amd64","--dockerfile=/build-context/Dockerfile","--context=dir:///build-context","--destination=10.1.0.6:5000/test-image:latest"]
+    volumeMounts:
+    - name: build-context
+      mountPath: /build-context
+    env:
+    - name: DOCKER_CONFIG
+      value: /kaniko/.docker/
+  volumes:
+  - name: build-context
+    configMap:
+      name: build-context
+      items:
+      - key: Dockerfile
+        path: Dockerfile
+  restartPolicy: Never
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: build-context
+data:
+  Dockerfile: |
+    FROM node:18-alpine
+    WORKDIR /app
+    COPY . .
+    RUN yarn install --production
+    CMD ["node", "src/index.js"]
+    EXPOSE 3000

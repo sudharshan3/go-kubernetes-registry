@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    name: pull-pod
+spec:
+    containers:
+      - name: pull-pod-container
+        image: 10.1.0.6:5000/test-image:latest
+
